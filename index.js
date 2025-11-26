@@ -113,7 +113,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             {
                 name: "search_recipes",
-                description: "Search recipes including keywords. Results weighted by: title, keywords, description, content",
+                description: "Search recipes by any word or phrase. Multiple words search as OR by default (matches either). For exact matches use quotes. Results ranked by relevance: title (highest), keywords, description, content.",
                 inputSchema: {
                     type: "object",
                     properties: {
@@ -127,7 +127,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             {
                 name: "search_snippets",
-                description: "Search code snippets freely across all recipes. Results weighted by: description, snippet, recipe title, recipe keywords, recipe description",
+                description: "Search code snippets across all recipes. Multiple words search as OR by default (matches either). Results ranked by relevance: snippet description (highest), code content, recipe title, keywords.",
                 inputSchema: {
                     type: "object",
                     properties: {
@@ -141,13 +141,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             {
                 name: "get_snippet",
-                description: "Get a code snippet by id number",
+                description: "Get a code snippet by its ID. Use this when you have a snippet ID from search results.",
                 inputSchema: {
                     type: "object",
                     properties: {
                         id: {
                             type: "number",
-                            description: "The snippet ID",
+                            description: "The snippet ID (from search results or list_snippets)",
                         },
                     },
                     required: ["id"],
@@ -169,7 +169,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             {
                 name: "get_recipe_snippet",
-                description: "Get a specific code snippet for a recipe by recipe id and ref",
+                description: "Get a specific code snippet by recipe ID and ref name. Use this when browsing a recipe and you know the snippet's ref (like 'setup' or 'middleware').",
                 inputSchema: {
                     type: "object",
                     properties: {
@@ -179,7 +179,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                         },
                         ref: {
                             type: "string",
-                            description: "The snippet reference",
+                            description: "The snippet reference name (e.g., 'setup', 'middleware', 'config')",
                         },
                     },
                     required: ["recipe_id", "ref"],
@@ -679,7 +679,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                         id: snippet.id,
                         recipe_id: snippet.recipe_id,
                         ref: snippet.ref,
-                        code: snippet.snippet,
+                        snippet: snippet.snippet,
                         language: snippet.language,
                         description: snippet.description,
                         created_at: snippet.created_at

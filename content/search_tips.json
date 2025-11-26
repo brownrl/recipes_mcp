@@ -2,17 +2,49 @@
     "no_results": [
         "Try searching for single words instead of phrases",
         "Use different keywords or synonyms",
-        "Try broader terms (e.g., 'server' instead of 'express server')",
-        "Use FTS5 syntax: \"exact phrase\" or word1 OR word2"
+        "Try broader terms (e.g., 'server' instead of 'express server setup')",
+        "Use quotes for exact phrases: \"express server\""
     ],
     "with_results": [
-        "Results are weighted by: title (highest), keywords, description, content (lowest)",
+        "Results are ranked by relevance: title > keywords > description > content",
+        "Multiple words match as OR (finds recipes with ANY word)",
         "Use get_recipe to see full details including code snippets"
     ],
-    "fts5_syntax": [
-        "\"exact phrase\" - Search for exact phrase",
-        "word1 AND word2 - Both words must be present",
-        "word1 OR word2 - Either word can be present",
-        "word1 NOT word2 - First word present, second word absent"
-    ]
+    "basic_search_examples": [
+        {
+            "query": "bash array",
+            "matches": "Recipes containing 'bash' OR 'array' (most have both, ranked by relevance)",
+            "explanation": "Default behavior finds either word, ranks recipes with both higher"
+        },
+        {
+            "query": "\"bash array\"",
+            "matches": "Only recipes with exact phrase 'bash array'",
+            "explanation": "Use quotes for exact phrase matching"
+        },
+        {
+            "query": "express",
+            "matches": "All recipes mentioning 'express' anywhere",
+            "explanation": "Single word searches are simple and effective"
+        }
+    ],
+    "power_user_tips": {
+        "description": "Advanced FTS5 syntax for precise searches (optional)",
+        "examples": [
+            {
+                "syntax": "bash AND array",
+                "meaning": "Must have BOTH words (not just either)",
+                "use_when": "You want only recipes that cover both topics"
+            },
+            {
+                "syntax": "express NOT mongodb",
+                "meaning": "Has 'express' but NOT 'mongodb'",
+                "use_when": "Filtering out specific technologies"
+            },
+            {
+                "syntax": "server OR backend",
+                "meaning": "Has either word (same as default)",
+                "use_when": "Explicit OR for clarity"
+            }
+        ]
+    }
 }

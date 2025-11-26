@@ -133,14 +133,14 @@ The Recipes MCP Server provides 13 tools for managing your coding knowledge base
 ### Discovery & Search
 - **about** - Get server information, available tools, and workflow guidance
 - **list_recipes** - Show all recipes with id, title, and description
-- **search_recipes** - Search recipes by title, keywords, description, or content (supports FTS5 syntax)
+- **search_recipes** - Search recipes by any word (multiple words = OR). Results ranked by relevance
 - **search_snippets** - Search code snippets across all recipes
 
 ### Retrieval
 - **get_recipe** - Get full recipe details including keywords, snippets, and addendums
-- **get_snippet** - Get a code snippet by its ID
+- **get_snippet** - Get a snippet by ID (use when you have ID from search results)
 - **get_recipe_snippets** - Get all code snippets for a specific recipe
-- **get_recipe_snippet** - Get a specific snippet by recipe_id and ref (e.g., `snippet:1:setup`)
+- **get_recipe_snippet** - Get a snippet by recipe_id + ref name (use when browsing a recipe)
 
 ### Creation
 - **create_recipe_howto** - Get detailed guide on creating recipes with proper structure
@@ -151,15 +151,39 @@ The Recipes MCP Server provides 13 tools for managing your coding knowledge base
 - **update_recipe** - Add an addendum to a recipe (for updates and notes)
 - **delete_recipe** - Delete a recipe and all related data (keywords, snippets, addendums)
 
-### Full-Text Search
+### Search Behavior
 
-All tables support FTS5 (Full-Text Search). You can use advanced syntax:
-- `"exact phrase"` - Search for exact phrase
-- `word1 AND word2` - Both words must be present
-- `word1 OR word2` - Either word can be present
-- `word1 NOT word2` - First word present, second absent
+**Basic Searching:**
+- Search with any word or phrase: `express`, `bash array`, `server setup`
+- Multiple words match as **OR** by default (finds recipes with ANY word)
+- Results are **ranked by relevance** - recipes matching more words rank higher
+- Use quotes for exact phrases: `"express server"`
 
-### Snippet Reference Format
+**Examples:**
+- `bash array` → Finds recipes with "bash" OR "array" (ranks recipes with both higher)
+- `"bash array"` → Only recipes with exact phrase "bash array"
+- `express` → All recipes mentioning express
+
+**Advanced Search (Power Users):**
+
+For precise control, use FTS5 syntax:
+- `word1 AND word2` - Must have BOTH words
+- `word1 NOT word2` - Has first word but NOT second
+- `"exact phrase"` - Exact phrase matching
+
+### Snippet Access Methods
+
+**Two ways to get snippets:**
+
+1. **By ID** - `get_snippet(id)` 
+   - Use when you have a snippet ID from search results
+   - Example: After searching snippets, you get ID 42
+   
+2. **By Recipe + Ref** - `get_recipe_snippet(recipe_id, ref)`
+   - Use when browsing a recipe and know the snippet name
+   - Example: Get the "setup" snippet from recipe #5
+
+**Snippet Reference Format:**
 
 Snippets use a unique reference format: `snippet:recipe_id:ref`
 
