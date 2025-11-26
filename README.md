@@ -14,6 +14,7 @@ When your AI agent needs to know how to do something, tell it: "Look up the reci
 - 🏷️ **Organized** - Tag recipes with keywords, add multiple code snippets per recipe
 - 📝 **Living Documentation** - Add addendums as recipes evolve over time
 - 🤖 **AI-Friendly** - Designed for AI coding agents to easily store and retrieve coding patterns
+- 🔒 **Security-Conscious** - Built-in warnings to prevent accidentally committing secrets
 
 Setup
 -----
@@ -228,6 +229,7 @@ export RECIPES_DB_PATH=/path/to/my-recipes.db
 - Create recipes for common patterns in your codebase
 - Update recipes with addendums as your approach evolves
 - Use descriptive keywords for easy searching
+- **⚠️ NEVER commit secrets** - use env vars or placeholders in recipes
 
 ### Reset Database
 
@@ -252,6 +254,8 @@ Ask your AI agent:
 > "Create a recipe for setting up an Express server with CORS. Include setup, middleware, and server start snippets."
 
 The agent will use `create_recipe` tool with appropriate keywords and code snippets.
+
+**⚠️ Security Note:** Never include API keys, passwords, or secrets in recipes! Use environment variables or placeholders instead.
 
 ### Example 2: Find a Recipe
 

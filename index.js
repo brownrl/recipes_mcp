@@ -187,7 +187,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             {
                 name: "create_recipe",
-                description: "Create a new recipe with title, description, keywords and code snippets",
+                description: "Create a new recipe with title, description, keywords and code snippets. ⚠️ WARNING: Do NOT include API keys, passwords, or secrets - recipes may be committed to version control!",
                 inputSchema: {
                     type: "object",
                     properties: {
@@ -280,7 +280,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             {
                 name: "recipe_add_snippet",
-                description: "Add a code snippet to an existing recipe",
+                description: "Add a code snippet to an existing recipe. ⚠️ WARNING: Do NOT include API keys, passwords, or secrets - recipes may be committed to version control!",
                 inputSchema: {
                     type: "object",
                     properties: {

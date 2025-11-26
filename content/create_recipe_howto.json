@@ -39,7 +39,25 @@
             }
         ]
     },
+    "security_warning": {
+        "title": "⚠️ IMPORTANT: Do Not Include Secrets",
+        "message": "If your recipes.db is committed to version control (recommended for team sharing), ALL recipe content will be visible to anyone with repository access.",
+        "avoid": [
+            "API keys, tokens, or credentials",
+            "Passwords or authentication secrets",
+            "Private keys or certificates",
+            "Database connection strings with passwords",
+            "Any sensitive customer or proprietary data"
+        ],
+        "instead_use": [
+            "Environment variable references: process.env.API_KEY",
+            "Placeholder values: 'YOUR_API_KEY_HERE'",
+            "Configuration file references: config.get('apiKey')",
+            "Secret management patterns without actual values"
+        ]
+    },
     "tips": [
+        "⚠️ NEVER include API keys, passwords, or secrets - use placeholders or env vars",
         "Keep snippet refs short and memorable",
         "Use descriptive keywords for better searchability",
         "Break complex code into multiple snippets with clear refs",
