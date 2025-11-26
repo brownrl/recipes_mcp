@@ -1,7 +1,7 @@
 Recipes MCP Server
 =======================
 
-This MCP server sits alongside your AI code agent and provides it with a handy tool to manage and interact with a recipe database for coding.
+This MCP server sits alongside your AI code agent and provides it with a handy tools to manage and interact with a recipe database for coding. This will help your AI agent remember coding patterns, best practices, and common solutions that you or your team use frequently. AKA, a "cookbook" for your codebase! Tribal knowledge made easy to access.
 
 When your AI agent does something good, tell it: "Save what you have done to a recipe".
 
