@@ -1,0 +1,27 @@
+{
+    "name": "recipes_mcp",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "bin": {
+        "recipes-mcp": "./index.js"
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/brownrl/recipes_mcp.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "commonjs",
+    "bugs": {
+        "url": "https://github.com/brownrl/recipes_mcp/issues"
+    },
+    "homepage": "https://github.com/brownrl/recipes_mcp#readme",
+    "dependencies": {
+        "sqlite3": "^5.1.7"
+    }
+}
