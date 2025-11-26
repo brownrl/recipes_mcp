@@ -191,6 +191,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                 inputSchema: {
                     type: "object",
                     properties: {
+                        has_read_howto: {
+                            type: "boolean",
+                            description: "Set to true to confirm you've read the how_to_create_recipe guide. If false or omitted, you'll be directed to read it first.",
+                            default: false
+                        },
                         title: {
                             type: "string",
                             description: "Recipe title",
@@ -377,30 +382,27 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     snippets: snippets.map(s => ({
                         id: s.id,
                         ref: s.ref,
+                        snippet: s.snippet,
                         language: s.language,
                         description: s.description,
-                        snippet_preview: s.snippet.substring(0, 100) + (s.snippet.length > 100 ? '...' : ''),
-                        to_get_full_snippet: {
-                            tool: "get_recipe_snippet",
-                            arguments: { recipe_id: args.id, ref: s.ref }
-                        }
+                        created_at: s.created_at
                     })),
                     addendums: addendums,
                     usage: {
-                        accessing_snippets: `This recipe has ${snippets.length} snippet(s). Use 'get_recipe_snippet' tool with recipe_id and the snippet's ref to get the full code.`,
+                        snippets_included: `All ${snippets.length} snippet(s) are included above with full code. You can reference them by their 'ref' field.`,
                         adding_snippets: "Use 'recipe_add_snippet' tool to add more code snippets to this recipe",
                         adding_notes: "Use 'update_recipe' tool to add an addendum with updates or additional notes"
                     },
                     next_actions: snippets.length > 0 ? [
                         {
-                            action: "Get first snippet",
-                            tool: "get_recipe_snippet",
-                            arguments: { recipe_id: args.id, ref: snippets[0].ref }
-                        },
-                        {
                             action: "Add another snippet",
                             tool: "recipe_add_snippet",
                             arguments: { recipe_id: args.id, ref: "<unique_ref>", snippet: "<code>", language: "<language>", description: "<description>" }
+                        },
+                        {
+                            action: "Add an addendum",
+                            tool: "update_recipe",
+                            arguments: { id: args.id, addendum: "<additional_notes_or_updates>" }
                         }
                     ] : [
                         {
@@ -720,6 +722,30 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             }
 
             case "create_recipe": {
+                // Check if agent has read the howto
+                if (!args.has_read_howto) {
+                    return {
+                        content: [
+                            {
+                                type: "text",
+                                text: JSON.stringify({
+                                    error: "Please read the recipe creation guide first",
+                                    message: "Before creating your first recipe, it's important to understand the structure and best practices.",
+                                    required_action: {
+                                        step: "1. Call the 'create_recipe_howto' tool to read the guide",
+                                        then: "2. Call 'create_recipe' again with has_read_howto: true"
+                                    },
+                                    why: "This ensures you understand how to structure the content field, reference snippets, and avoid common mistakes.",
+                                    next_action: {
+                                        tool: "create_recipe_howto",
+                                        arguments: {}
+                                    }
+                                }, null, 2),
+                            },
+                        ],
+                    };
+                }
+
                 const db = new sqlite3.Database(dbPath);
 
                 return new Promise((resolve, reject) => {

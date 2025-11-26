@@ -3,10 +3,21 @@
     "instructions": [
         "1. Provide a clear, descriptive title for your recipe",
         "2. Write a brief description explaining what the recipe accomplishes",
-        "3. Include the main content/instructions for the recipe",
+        "3. Write the main content/instructions - this is the narrative that ties everything together",
         "4. Add relevant keywords (comma-separated) for easy searching",
         "5. Include code snippets with the following structure:"
     ],
+    "content_field_guide": {
+        "purpose": "The content field is the main narrative/instructions for your recipe. It explains the approach, key concepts, and how the pieces fit together.",
+        "how_to_reference_snippets": "Reference your code snippets by their 'ref' identifier. For example: 'See snippet setup_express for the initial configuration' or 'The middleware is configured in snippet cors_config'.",
+        "best_practices": [
+            "Write content as if explaining the solution to a colleague",
+            "Reference snippets by their ref (e.g., 'see snippet email_trigger_example')",
+            "Explain WHY you chose this approach, not just WHAT it does",
+            "Include any prerequisites or assumptions",
+            "Mention any gotchas or common pitfalls"
+        ]
+    },
     "snippet_structure": {
         "ref": "A unique reference identifier for this snippet (e.g., 'setup', 'main', 'helper')",
         "snippet": "The actual code without markdown formatting - just plain code",
@@ -16,7 +27,7 @@
     "example": {
         "title": "Setting up Express Server with CORS",
         "description": "A recipe for creating a basic Express.js server with CORS enabled",
-        "content": "This recipe shows how to set up an Express server with CORS middleware for handling cross-origin requests.",
+        "content": "This recipe demonstrates a standard Express.js server setup with CORS enabled. Start by importing dependencies (see snippet setup), then configure middleware (see snippet middleware), and finally start the server (see snippet server). This pattern works well for APIs that need to accept requests from browser-based applications.",
         "keywords": "express, nodejs, cors, server, middleware",
         "snippets": [
             {
@@ -64,8 +75,35 @@
         "Don't include markdown code fences (```) in snippet content",
         "Include proper context in snippet descriptions"
     ],
+    "how_to_call_create_recipe": {
+        "important": "After reading this guide, you must set has_read_howto: true when calling create_recipe",
+        "tool": "create_recipe",
+        "required_parameters": {
+            "has_read_howto": "true (REQUIRED - confirms you've read this guide)",
+            "title": "string - Recipe title",
+            "description": "string - Recipe description",
+            "content": "string - Main narrative referencing snippets by their ref",
+            "keywords": "string - Comma-separated keywords (optional)",
+            "snippets": "array - Code snippets with ref, snippet, language, description (optional)"
+        },
+        "example_call": {
+            "has_read_howto": true,
+            "title": "Setting up Express Server with CORS",
+            "description": "A recipe for creating a basic Express.js server with CORS enabled",
+            "content": "This recipe demonstrates a standard Express.js server setup with CORS enabled. Start by importing dependencies (see snippet setup), then configure middleware (see snippet middleware), and finally start the server (see snippet server). This pattern works well for APIs that need to accept requests from browser-based applications.",
+            "keywords": "express, nodejs, cors, server, middleware",
+            "snippets": [
+                {
+                    "ref": "setup",
+                    "snippet": "const express = require('express');\\nconst cors = require('cors');\\nconst app = express();",
+                    "language": "javascript",
+                    "description": "Import dependencies and create Express app"
+                }
+            ]
+        }
+    },
     "next_actions": [
-        "Use create_recipe with your recipe data",
+        "Call create_recipe with has_read_howto: true and your recipe data",
         "Use list_recipes to see all existing recipes"
     ]
 }
