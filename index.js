@@ -723,7 +723,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
             case "create_recipe": {
                 // Check if agent has read the howto
-                if (!args.has_read_howto) {
+                // Explicitly check for true value (not just truthy)
+                if (args.has_read_howto !== true) {
                     return {
                         content: [
                             {
