@@ -1,0 +1,55 @@
+{
+    "server": "Recipes MCP Server",
+    "version": "1.0.0",
+    "description": "Create and manage a recipe database for coding knowledge and tribal wisdom. Store code recipes with searchable snippets, keywords, and addendums.",
+    "workflow": {
+        "getting_started": [
+            "1. Use 'create_recipe_howto' to understand recipe structure",
+            "2. Use 'create_recipe' to add your first recipe with code snippets",
+            "3. Use 'list_recipes' or 'search_recipes' to find recipes",
+            "4. Use 'get_recipe' to view full recipe details",
+            "5. Use 'get_recipe_snippet' to retrieve specific code snippets"
+        ],
+        "searching": [
+            "Use 'search_recipes' to find recipes by title, keywords, or content",
+            "Use 'search_snippets' to find specific code across all recipes",
+            "Search supports FTS5 syntax: use quotes for exact phrases, AND/OR for boolean logic"
+        ],
+        "managing": [
+            "Use 'update_recipe' to add addendums when recipes evolve",
+            "Use 'recipe_add_snippet' to add new code snippets to existing recipes",
+            "Use 'delete_recipe' to remove recipes (cascades to all related data)"
+        ]
+    },
+    "tools": {
+        "discovery": [
+            "about - This information",
+            "list_recipes - List all recipes (id, title, description)",
+            "search_recipes - Search recipes by keyword/content",
+            "search_snippets - Search code snippets across all recipes"
+        ],
+        "retrieval": [
+            "get_recipe - Get full recipe with keywords, snippets, addendums",
+            "get_snippet - Get a snippet by its ID",
+            "get_recipe_snippets - Get all snippets for a specific recipe",
+            "get_recipe_snippet - Get specific snippet by recipe_id and ref (e.g., recipe_id:1, ref:'setup')"
+        ],
+        "creation": [
+            "create_recipe_howto - Get detailed guide on creating recipes",
+            "create_recipe - Create new recipe with title, description, keywords, and snippets",
+            "recipe_add_snippet - Add a code snippet to existing recipe"
+        ],
+        "modification": [
+            "update_recipe - Add an addendum to an existing recipe",
+            "delete_recipe - Delete a recipe and all related data"
+        ]
+    },
+    "usage_tips": [
+        "All tools return JSON responses",
+        "Responses include 'next_actions' to guide your workflow",
+        "Snippet refs should be short and memorable (e.g., 'setup', 'main', 'helper')",
+        "Code snippets should be plain code without markdown formatting (no ``` fences)",
+        "Keywords are comma-separated and stored individually for better searching",
+        "Use FTS5 search syntax for advanced queries: \"exact phrase\" AND keyword OR another"
+    ]
+}

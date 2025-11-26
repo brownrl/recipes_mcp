@@ -1,0 +1,53 @@
+{
+    "guide": "How to Create a Recipe",
+    "instructions": [
+        "1. Provide a clear, descriptive title for your recipe",
+        "2. Write a brief description explaining what the recipe accomplishes",
+        "3. Include the main content/instructions for the recipe",
+        "4. Add relevant keywords (comma-separated) for easy searching",
+        "5. Include code snippets with the following structure:"
+    ],
+    "snippet_structure": {
+        "ref": "A unique reference identifier for this snippet (e.g., 'setup', 'main', 'helper')",
+        "snippet": "The actual code without markdown formatting - just plain code",
+        "language": "The programming language (e.g., 'javascript', 'python', 'bash')",
+        "description": "A brief description of what this snippet does"
+    },
+    "example": {
+        "title": "Setting up Express Server with CORS",
+        "description": "A recipe for creating a basic Express.js server with CORS enabled",
+        "content": "This recipe shows how to set up an Express server with CORS middleware for handling cross-origin requests.",
+        "keywords": "express, nodejs, cors, server, middleware",
+        "snippets": [
+            {
+                "ref": "setup",
+                "snippet": "const express = require('express');\nconst cors = require('cors');\nconst app = express();",
+                "language": "javascript",
+                "description": "Import dependencies and create Express app"
+            },
+            {
+                "ref": "middleware",
+                "snippet": "app.use(cors());\napp.use(express.json());",
+                "language": "javascript",
+                "description": "Configure CORS and JSON middleware"
+            },
+            {
+                "ref": "server",
+                "snippet": "const PORT = process.env.PORT || 3000;\napp.listen(PORT, () => {\n  console.log(`Server running on port ${PORT}`);\n});",
+                "language": "javascript",
+                "description": "Start the server"
+            }
+        ]
+    },
+    "tips": [
+        "Keep snippet refs short and memorable",
+        "Use descriptive keywords for better searchability",
+        "Break complex code into multiple snippets with clear refs",
+        "Don't include markdown code fences (```) in snippet content",
+        "Include proper context in snippet descriptions"
+    ],
+    "next_actions": [
+        "Use create_recipe with your recipe data",
+        "Use list_recipes to see all existing recipes"
+    ]
+}

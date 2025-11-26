@@ -1,33 +1,48 @@
 Recipes MCP Server
 =======================
 
-This MCP servers sits along side your AI code agent and provides it with a handy tool to manage and interact with a recipe database for coding.
+This MCP server sits alongside your AI code agent and provides it with a handy tool to manage and interact with a recipe database for coding.
 
 When your AI agent does something good, tell it: "Save what you have done to a recipe".
 
 When your AI agent needs to know how to do something, tell it: "Look up the recipe for [task]".
 
+## Key Features
+
+- 📚 **Team Knowledge Sharing** - Database lives in your project directory, commit it to share recipes with your team
+- 🔍 **Full-Text Search** - Fast FTS5-powered search across recipes and code snippets
+- 🏷️ **Organized** - Tag recipes with keywords, add multiple code snippets per recipe
+- 📝 **Living Documentation** - Add addendums as recipes evolve over time
+- 🤖 **AI-Friendly** - Designed for AI coding agents to easily store and retrieve coding patterns
+
 Setup
 -----
 
-### 1. Clone or download this repository
+### Option 1: Install in Your Project (Recommended for Team Sharing)
+
+Install the package in your project to share recipes with your team:
 
 ```bash
-git clone https://github.com/brownrl/recipes_mcp.git
-cd recipes_mcp
+cd your-project
+npm install github:brownrl/recipes_mcp
 ```
 
-### 2. Install dependencies
+The database (`recipes.db`) will be created in your project root on first use. **Commit this file to your repository** so your team can share recipes!
 
 ```bash
-npm install
+git add recipes.db
+git commit -m "Add recipe database"
 ```
 
-The database will be automatically initialized on first run. You can also manually initialize it with:
+### Option 2: Global/Custom Location
+
+For a personal recipe database shared across all projects:
 
 ```bash
-node seed.cjs
+export RECIPES_DB_PATH=~/my-recipes/recipes.db
 ```
+
+Add this to your `~/.bashrc` or `~/.zshrc` to make it permanent.
 
 Usage
 -----
@@ -51,7 +66,25 @@ Add to your `~/Library/Application Support/Claude/claude_desktop_config.json`:
   "mcpServers": {
     "recipes": {
       "command": "node",
-      "args": ["/Users/YOUR_USERNAME/path/to/recipes_mcp/index.js"]
+      "args": ["/absolute/path/to/your-project/node_modules/recipes_mcp/index.js"],
+      "cwd": "/absolute/path/to/your-project"
+    }
+  }
+}
+```
+
+**Important:** Set `cwd` to your project directory so the database is created in the right location!
+
+**Alternative - Custom Database Location:**
+```json
+{
+  "mcpServers": {
+    "recipes": {
+      "command": "node",
+      "args": ["/absolute/path/to/your-project/node_modules/recipes_mcp/index.js"],
+      "env": {
+        "RECIPES_DB_PATH": "/Users/yourname/shared-recipes/recipes.db"
+      }
     }
   }
 }
@@ -77,7 +110,7 @@ Add to your `.vscode/mcp.json` or workspace settings:
 
 ### Charm Crush Configuration
 
-Add to your `.crush.json`:
+Add to your `.crush.json` in your project root:
 
 ```json
 {
@@ -86,7 +119,7 @@ Add to your `.crush.json`:
     "recipes": {
       "command": "node",
       "type": "stdio",
-      "args": ["/absolute/path/to/recipes_mcp/index.js"]
+      "args": ["./node_modules/recipes_mcp/index.js"]
     }
   }
 }
@@ -147,18 +180,43 @@ All tables have corresponding FTS5 virtual tables for fast searching with automa
 Maintenance
 -----------
 
+### Database Location
+
+By default, the database is created at `./recipes.db` in your current working directory.
+
+To use a custom location, set the `RECIPES_DB_PATH` environment variable:
+
+```bash
+export RECIPES_DB_PATH=/path/to/my-recipes.db
+```
+
+### Team Collaboration
+
+**Sharing Recipes with Your Team:**
+
+1. Commit `recipes.db` to your project repository
+2. Team members pull the latest code and get all recipes automatically
+3. As recipes are added/updated, commit and push the database
+4. Everyone stays in sync!
+
+**Best Practices:**
+- Add `recipes.db` to your project (don't gitignore it)
+- Create recipes for common patterns in your codebase
+- Update recipes with addendums as your approach evolves
+- Use descriptive keywords for easy searching
+
 ### Reset Database
 
 To drop and recreate all tables (WARNING: deletes all data):
 
 ```bash
-node seed.cjs --drop
+node node_modules/recipes_mcp/seed.cjs --drop
 ```
 
 ### Backup Database
 
 ```bash
-cp recipes.db recipes_backup.db
+cp recipes.db recipes_backup_$(date +%Y%m%d).db
 ```
 
 Examples

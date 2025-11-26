@@ -4,14 +4,16 @@ const path = require('path');
 // Check for --drop flag
 const shouldDrop = process.argv.includes('--drop');
 
-// Define the database path
-const dbPath = path.join(__dirname, 'recipes.db');
+// Database path: Use environment variable, or default to current working directory
+const dbPath = process.env.RECIPES_DB_PATH || path.join(process.cwd(), 'recipes.db');
+
+console.log(`Using database at: ${dbPath}`);
 
 // Define all tables and their schemas
 const tables = [
-    {
-        name: 'recipes',
-        schema: `
+  {
+    name: 'recipes',
+    schema: `
       CREATE TABLE IF NOT EXISTS recipes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title VARCHAR(255) NOT NULL,
@@ -20,7 +22,7 @@ const tables = [
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `,
-        ftsSchema: `
+    ftsSchema: `
       CREATE VIRTUAL TABLE IF NOT EXISTS recipes_fts USING fts5(
         title,
         description,
@@ -29,59 +31,59 @@ const tables = [
         content_rowid=id
       )
     `,
-        ftsTriggers: [
-            `CREATE TRIGGER IF NOT EXISTS recipes_ai AFTER INSERT ON recipes BEGIN
+    ftsTriggers: [
+      `CREATE TRIGGER IF NOT EXISTS recipes_ai AFTER INSERT ON recipes BEGIN
         INSERT INTO recipes_fts(rowid, title, description, content)
         VALUES (new.id, new.title, new.description, new.content);
       END`,
-            `CREATE TRIGGER IF NOT EXISTS recipes_ad AFTER DELETE ON recipes BEGIN
+      `CREATE TRIGGER IF NOT EXISTS recipes_ad AFTER DELETE ON recipes BEGIN
         INSERT INTO recipes_fts(recipes_fts, rowid, title, description, content)
         VALUES('delete', old.id, old.title, old.description, old.content);
       END`,
-            `CREATE TRIGGER IF NOT EXISTS recipes_au AFTER UPDATE ON recipes BEGIN
+      `CREATE TRIGGER IF NOT EXISTS recipes_au AFTER UPDATE ON recipes BEGIN
         INSERT INTO recipes_fts(recipes_fts, rowid, title, description, content)
         VALUES('delete', old.id, old.title, old.description, old.content);
         INSERT INTO recipes_fts(rowid, title, description, content)
         VALUES (new.id, new.title, new.description, new.content);
       END`
-        ]
-    },
-    {
-        name: 'recipe_keywords',
-        schema: `
+    ]
+  },
+  {
+    name: 'recipe_keywords',
+    schema: `
       CREATE TABLE IF NOT EXISTS recipe_keywords (
         recipe_id INTEGER NOT NULL,
         keyword TEXT NOT NULL,
         FOREIGN KEY (recipe_id) REFERENCES recipes(id)
       )
     `,
-        ftsSchema: `
+    ftsSchema: `
       CREATE VIRTUAL TABLE IF NOT EXISTS recipe_keywords_fts USING fts5(
         keyword,
         content=recipe_keywords,
         content_rowid=rowid
       )
     `,
-        ftsTriggers: [
-            `CREATE TRIGGER IF NOT EXISTS recipe_keywords_ai AFTER INSERT ON recipe_keywords BEGIN
+    ftsTriggers: [
+      `CREATE TRIGGER IF NOT EXISTS recipe_keywords_ai AFTER INSERT ON recipe_keywords BEGIN
         INSERT INTO recipe_keywords_fts(rowid, keyword)
         VALUES (new.rowid, new.keyword);
       END`,
-            `CREATE TRIGGER IF NOT EXISTS recipe_keywords_ad AFTER DELETE ON recipe_keywords BEGIN
+      `CREATE TRIGGER IF NOT EXISTS recipe_keywords_ad AFTER DELETE ON recipe_keywords BEGIN
         INSERT INTO recipe_keywords_fts(recipe_keywords_fts, rowid, keyword)
         VALUES('delete', old.rowid, old.keyword);
       END`,
-            `CREATE TRIGGER IF NOT EXISTS recipe_keywords_au AFTER UPDATE ON recipe_keywords BEGIN
+      `CREATE TRIGGER IF NOT EXISTS recipe_keywords_au AFTER UPDATE ON recipe_keywords BEGIN
         INSERT INTO recipe_keywords_fts(recipe_keywords_fts, rowid, keyword)
         VALUES('delete', old.rowid, old.keyword);
         INSERT INTO recipe_keywords_fts(rowid, keyword)
         VALUES (new.rowid, new.keyword);
       END`
-        ]
-    },
-    {
-        name: 'recipe_addendums',
-        schema: `
+    ]
+  },
+  {
+    name: 'recipe_addendums',
+    schema: `
       CREATE TABLE IF NOT EXISTS recipe_addendums (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         recipe_id INTEGER NOT NULL,
@@ -90,33 +92,33 @@ const tables = [
         FOREIGN KEY (recipe_id) REFERENCES recipes(id)
       )
     `,
-        ftsSchema: `
+    ftsSchema: `
       CREATE VIRTUAL TABLE IF NOT EXISTS recipe_addendums_fts USING fts5(
         content,
         content=recipe_addendums,
         content_rowid=id
       )
     `,
-        ftsTriggers: [
-            `CREATE TRIGGER IF NOT EXISTS recipe_addendums_ai AFTER INSERT ON recipe_addendums BEGIN
+    ftsTriggers: [
+      `CREATE TRIGGER IF NOT EXISTS recipe_addendums_ai AFTER INSERT ON recipe_addendums BEGIN
         INSERT INTO recipe_addendums_fts(rowid, content)
         VALUES (new.id, new.content);
       END`,
-            `CREATE TRIGGER IF NOT EXISTS recipe_addendums_ad AFTER DELETE ON recipe_addendums BEGIN
+      `CREATE TRIGGER IF NOT EXISTS recipe_addendums_ad AFTER DELETE ON recipe_addendums BEGIN
         INSERT INTO recipe_addendums_fts(recipe_addendums_fts, rowid, content)
         VALUES('delete', old.id, old.content);
       END`,
-            `CREATE TRIGGER IF NOT EXISTS recipe_addendums_au AFTER UPDATE ON recipe_addendums BEGIN
+      `CREATE TRIGGER IF NOT EXISTS recipe_addendums_au AFTER UPDATE ON recipe_addendums BEGIN
         INSERT INTO recipe_addendums_fts(recipe_addendums_fts, rowid, content)
         VALUES('delete', old.id, old.content);
         INSERT INTO recipe_addendums_fts(rowid, content)
         VALUES (new.id, new.content);
       END`
-        ]
-    },
-    {
-        name: 'recipe_snippets',
-        schema: `
+    ]
+  },
+  {
+    name: 'recipe_snippets',
+    schema: `
       CREATE TABLE IF NOT EXISTS recipe_snippets (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         recipe_id INTEGER NOT NULL,
@@ -129,7 +131,7 @@ const tables = [
         UNIQUE(recipe_id, ref)
       )
     `,
-        ftsSchema: `
+    ftsSchema: `
       CREATE VIRTUAL TABLE IF NOT EXISTS recipe_snippets_fts USING fts5(
         ref,
         snippet,
@@ -139,105 +141,105 @@ const tables = [
         content_rowid=id
       )
     `,
-        ftsTriggers: [
-            `CREATE TRIGGER IF NOT EXISTS recipe_snippets_ai AFTER INSERT ON recipe_snippets BEGIN
+    ftsTriggers: [
+      `CREATE TRIGGER IF NOT EXISTS recipe_snippets_ai AFTER INSERT ON recipe_snippets BEGIN
         INSERT INTO recipe_snippets_fts(rowid, ref, snippet, language, description)
         VALUES (new.id, new.ref, new.snippet, new.language, new.description);
       END`,
-            `CREATE TRIGGER IF NOT EXISTS recipe_snippets_ad AFTER DELETE ON recipe_snippets BEGIN
+      `CREATE TRIGGER IF NOT EXISTS recipe_snippets_ad AFTER DELETE ON recipe_snippets BEGIN
         INSERT INTO recipe_snippets_fts(recipe_snippets_fts, rowid, ref, snippet, language, description)
         VALUES('delete', old.id, old.ref, old.snippet, old.language, old.description);
       END`,
-            `CREATE TRIGGER IF NOT EXISTS recipe_snippets_au AFTER UPDATE ON recipe_snippets BEGIN
+      `CREATE TRIGGER IF NOT EXISTS recipe_snippets_au AFTER UPDATE ON recipe_snippets BEGIN
         INSERT INTO recipe_snippets_fts(recipe_snippets_fts, rowid, ref, snippet, language, description)
         VALUES('delete', old.id, old.ref, old.snippet, old.language, old.description);
         INSERT INTO recipe_snippets_fts(rowid, ref, snippet, language, description)
         VALUES (new.id, new.ref, new.snippet, new.language, new.description);
       END`
-        ]
-    }
+    ]
+  }
 ];
 
 // Create or open the database
 const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) {
-        console.error('Error opening database:', err.message);
-        process.exit(1);
-    }
-    console.log('Connected to the recipes.db database.');
+  if (err) {
+    console.error('Error opening database:', err.message);
+    process.exit(1);
+  }
+  console.log('Connected to the recipes.db database.');
 });
 
 // Create tables
 db.serialize(() => {
-    // Handle drops if --drop flag is set
-    if (shouldDrop) {
-        tables.forEach(table => {
-            // Drop FTS triggers first
-            if (table.ftsTriggers) {
-                table.ftsTriggers.forEach((_, index) => {
-                    const triggerName = `${table.name}_${['ai', 'ad', 'au'][index]}`;
-                    db.run(`DROP TRIGGER IF EXISTS ${triggerName}`);
-                });
-            }
-            // Drop FTS table
-            db.run(`DROP TABLE IF EXISTS ${table.name}_fts`);
-            // Drop main table
-            db.run(`DROP TABLE IF EXISTS ${table.name}`, (err) => {
-                if (err) {
-                    console.error(`Error dropping ${table.name} table:`, err.message);
-                } else {
-                    const displayName = table.name.charAt(0).toUpperCase() + table.name.slice(1).replace(/_/g, '_');
-                    console.log(`${displayName} table dropped.`);
-                }
-            });
+  // Handle drops if --drop flag is set
+  if (shouldDrop) {
+    tables.forEach(table => {
+      // Drop FTS triggers first
+      if (table.ftsTriggers) {
+        table.ftsTriggers.forEach((_, index) => {
+          const triggerName = `${table.name}_${['ai', 'ad', 'au'][index]}`;
+          db.run(`DROP TRIGGER IF EXISTS ${triggerName}`);
         });
-    }
-
-    // Create all main tables first
-    tables.forEach(table => {
-        db.run(table.schema, (err) => {
-            if (err) {
-                console.error(`Error creating ${table.name} table:`, err.message);
-            } else {
-                const displayName = table.name.charAt(0).toUpperCase() + table.name.slice(1).replace(/_/g, '_');
-                console.log(`${displayName} table created successfully.`);
-            }
-        });
-    });
-
-    // Create all FTS tables
-    tables.forEach(table => {
-        if (table.ftsSchema) {
-            db.run(table.ftsSchema, (err) => {
-                if (err) {
-                    console.error(`Error creating ${table.name}_fts table:`, err.message);
-                } else {
-                    const displayName = table.name.charAt(0).toUpperCase() + table.name.slice(1).replace(/_/g, '_');
-                    console.log(`${displayName} FTS table created successfully.`);
-                }
-            });
-        }
-    });
-
-    // Create all triggers last
-    tables.forEach(table => {
-        if (table.ftsTriggers) {
-            table.ftsTriggers.forEach((trigger) => {
-                db.run(trigger, (err) => {
-                    if (err) {
-                        console.error(`Error creating trigger for ${table.name}:`, err.message);
-                    }
-                });
-            });
-        }
-    });
-
-    // Close the database connection after all operations complete
-    db.close((err) => {
+      }
+      // Drop FTS table
+      db.run(`DROP TABLE IF EXISTS ${table.name}_fts`);
+      // Drop main table
+      db.run(`DROP TABLE IF EXISTS ${table.name}`, (err) => {
         if (err) {
-            console.error('Error closing database:', err.message);
+          console.error(`Error dropping ${table.name} table:`, err.message);
         } else {
-            console.log('Database connection closed.');
+          const displayName = table.name.charAt(0).toUpperCase() + table.name.slice(1).replace(/_/g, '_');
+          console.log(`${displayName} table dropped.`);
         }
+      });
     });
+  }
+
+  // Create all main tables first
+  tables.forEach(table => {
+    db.run(table.schema, (err) => {
+      if (err) {
+        console.error(`Error creating ${table.name} table:`, err.message);
+      } else {
+        const displayName = table.name.charAt(0).toUpperCase() + table.name.slice(1).replace(/_/g, '_');
+        console.log(`${displayName} table created successfully.`);
+      }
+    });
+  });
+
+  // Create all FTS tables
+  tables.forEach(table => {
+    if (table.ftsSchema) {
+      db.run(table.ftsSchema, (err) => {
+        if (err) {
+          console.error(`Error creating ${table.name}_fts table:`, err.message);
+        } else {
+          const displayName = table.name.charAt(0).toUpperCase() + table.name.slice(1).replace(/_/g, '_');
+          console.log(`${displayName} FTS table created successfully.`);
+        }
+      });
+    }
+  });
+
+  // Create all triggers last
+  tables.forEach(table => {
+    if (table.ftsTriggers) {
+      table.ftsTriggers.forEach((trigger) => {
+        db.run(trigger, (err) => {
+          if (err) {
+            console.error(`Error creating trigger for ${table.name}:`, err.message);
+          }
+        });
+      });
+    }
+  });
+
+  // Close the database connection after all operations complete
+  db.close((err) => {
+    if (err) {
+      console.error('Error closing database:', err.message);
+    } else {
+      console.log('Database connection closed.');
+    }
+  });
 });

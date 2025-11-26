@@ -13,7 +13,19 @@ import { execSync } from "child_process";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const dbPath = path.join(__dirname, "recipes.db");
+
+// Database path: Use environment variable, or default to current working directory
+const dbPath = process.env.RECIPES_DB_PATH || path.join(process.cwd(), "recipes.db");
+
+// Load content templates from package directory
+const loadContent = (filename) => {
+    const contentPath = path.join(__dirname, "content", filename);
+    return JSON.parse(fs.readFileSync(contentPath, "utf8"));
+};
+
+const aboutContent = loadContent("about.json");
+const searchTips = loadContent("search_tips.json");
+const createRecipeHowto = loadContent("create_recipe_howto.json");
 
 const server = new Server(
     {
@@ -307,66 +319,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     try {
         switch (name) {
             case "about": {
-                const result = {
-                    server: "Recipes MCP Server",
-                    version: "1.0.0",
-                    description: "Create and manage a recipe database for coding knowledge and tribal wisdom. Store code recipes with searchable snippets, keywords, and addendums.",
-                    workflow: {
-                        getting_started: [
-                            "1. Use 'create_recipe_howto' to understand recipe structure",
-                            "2. Use 'create_recipe' to add your first recipe with code snippets",
-                            "3. Use 'list_recipes' or 'search_recipes' to find recipes",
-                            "4. Use 'get_recipe' to view full recipe details",
-                            "5. Use 'get_recipe_snippet' to retrieve specific code snippets"
-                        ],
-                        searching: [
-                            "Use 'search_recipes' to find recipes by title, keywords, or content",
-                            "Use 'search_snippets' to find specific code across all recipes",
-                            "Search supports FTS5 syntax: use quotes for exact phrases, AND/OR for boolean logic"
-                        ],
-                        managing: [
-                            "Use 'update_recipe' to add addendums when recipes evolve",
-                            "Use 'recipe_add_snippet' to add new code snippets to existing recipes",
-                            "Use 'delete_recipe' to remove recipes (cascades to all related data)"
-                        ]
-                    },
-                    tools: {
-                        discovery: [
-                            "about - This information",
-                            "list_recipes - List all recipes (id, title, description)",
-                            "search_recipes - Search recipes by keyword/content",
-                            "search_snippets - Search code snippets across all recipes"
-                        ],
-                        retrieval: [
-                            "get_recipe - Get full recipe with keywords, snippets, addendums",
-                            "get_snippet - Get a snippet by its ID",
-                            "get_recipe_snippets - Get all snippets for a specific recipe",
-                            "get_recipe_snippet - Get specific snippet by recipe_id and ref (e.g., recipe_id:1, ref:'setup')"
-                        ],
-                        creation: [
-                            "create_recipe_howto - Get detailed guide on creating recipes",
-                            "create_recipe - Create new recipe with title, description, keywords, and snippets",
-                            "recipe_add_snippet - Add a code snippet to existing recipe"
-                        ],
-                        modification: [
-                            "update_recipe - Add an addendum to an existing recipe",
-                            "delete_recipe - Delete a recipe and all related data"
-                        ]
-                    },
-                    usage_tips: [
-                        "All tools return JSON responses",
-                        "Responses include 'next_actions' to guide your workflow",
-                        "Snippet refs should be short and memorable (e.g., 'setup', 'main', 'helper')",
-                        "Code snippets should be plain code without markdown formatting (no ``` fences)",
-                        "Keywords are comma-separated and stored individually for better searching",
-                        "Use FTS5 search syntax for advanced queries: \"exact phrase\" AND keyword OR another"
-                    ]
-                };
                 return {
                     content: [
                         {
                             type: "text",
-                            text: JSON.stringify(result, null, 2),
+                            text: JSON.stringify(aboutContent, null, 2),
                         },
                     ],
                 };
@@ -506,21 +463,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     })),
                     count: searchResults.length,
                     query: query,
-                    search_tips: searchResults.length === 0 ? [
-                        "Try searching for single words instead of phrases",
-                        "Use different keywords or synonyms",
-                        "Try broader terms (e.g., 'server' instead of 'express server')",
-                        "Use FTS5 syntax: \"exact phrase\" or word1 OR word2"
-                    ] : [
-                        "Results are weighted by: title (highest), keywords, description, content (lowest)",
-                        "Use get_recipe to see full details including code snippets"
-                    ],
-                    fts5_syntax_examples: [
-                        "\"exact phrase\" - Search for exact phrase",
-                        "word1 AND word2 - Both words must be present",
-                        "word1 OR word2 - Either word can be present",
-                        "word1 NOT word2 - First word present, second word absent"
-                    ],
+                    search_tips: searchResults.length === 0 ? searchTips.no_results : searchTips.with_results,
+                    fts5_syntax_examples: searchTips.fts5_syntax,
                     next_actions: searchResults.length > 0 ? [
                         {
                             action: "View first result",
@@ -865,64 +809,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             }
 
             case "create_recipe_howto": {
-                const result = {
-                    guide: "How to Create a Recipe",
-                    instructions: [
-                        "1. Provide a clear, descriptive title for your recipe",
-                        "2. Write a brief description explaining what the recipe accomplishes",
-                        "3. Include the main content/instructions for the recipe",
-                        "4. Add relevant keywords (comma-separated) for easy searching",
-                        "5. Include code snippets with the following structure:"
-                    ],
-                    snippet_structure: {
-                        ref: "A unique reference identifier for this snippet (e.g., 'setup', 'main', 'helper')",
-                        snippet: "The actual code without markdown formatting - just plain code",
-                        language: "The programming language (e.g., 'javascript', 'python', 'bash')",
-                        description: "A brief description of what this snippet does"
-                    },
-                    example: {
-                        title: "Setting up Express Server with CORS",
-                        description: "A recipe for creating a basic Express.js server with CORS enabled",
-                        content: "This recipe shows how to set up an Express server with CORS middleware for handling cross-origin requests.",
-                        keywords: "express, nodejs, cors, server, middleware",
-                        snippets: [
-                            {
-                                ref: "setup",
-                                snippet: "const express = require('express');\nconst cors = require('cors');\nconst app = express();",
-                                language: "javascript",
-                                description: "Import dependencies and create Express app"
-                            },
-                            {
-                                ref: "middleware",
-                                snippet: "app.use(cors());\napp.use(express.json());",
-                                language: "javascript",
-                                description: "Configure CORS and JSON middleware"
-                            },
-                            {
-                                ref: "server",
-                                snippet: "const PORT = process.env.PORT || 3000;\napp.listen(PORT, () => {\n  console.log(`Server running on port ${ PORT } `);\n});",
-                                language: "javascript",
-                                description: "Start the server"
-                            }
-                        ]
-                    },
-                    tips: [
-                        "Keep snippet refs short and memorable",
-                        "Use descriptive keywords for better searchability",
-                        "Break complex code into multiple snippets with clear refs",
-                        "Don't include markdown code fences (```) in snippet content",
-                        "Include proper context in snippet descriptions"
-                    ],
-                    next_actions: [
-                        "Use create_recipe with your recipe data",
-                        "Use list_recipes to see all existing recipes"
-                    ]
-                };
                 return {
                     content: [
                         {
                             type: "text",
-                            text: JSON.stringify(result, null, 2),
+                            text: JSON.stringify(createRecipeHowto, null, 2),
                         },
                     ],
                 };
@@ -1099,11 +990,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function main() {
     // Check if database exists, initialize if not
     if (!fs.existsSync(dbPath)) {
-        console.error("Database not found, initializing...");
+        console.error(`Database not found at: ${dbPath}`);
+        console.error("Initializing new recipe database...");
         try {
             const seedPath = path.join(__dirname, "seed.cjs");
-            execSync(`node "${seedPath}"`, { stdio: 'inherit' });
+            // Set environment variable so seed.cjs uses the same path
+            process.env.RECIPES_DB_PATH = dbPath;
+            execSync(`node "${seedPath}"`, { stdio: 'inherit', env: process.env });
             console.error("Database initialized successfully.");
+            console.error("Tip: Commit recipes.db to your repository to share with your team!");
         } catch (error) {
             console.error("Failed to initialize database:", error);
             process.exit(1);

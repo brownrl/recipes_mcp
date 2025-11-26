@@ -1,5 +1,10 @@
 node_modules/
-*.db
+
+# SQLite temporary files (these are auto-regenerated)
 *.db-journal
 *.db-shm
 *.db-wal
+
+# NOTE: recipes.db is intentionally NOT ignored
+# The database should be committed to share recipes with your team
+# If you want a personal-only database, set RECIPES_DB_PATH to a different location

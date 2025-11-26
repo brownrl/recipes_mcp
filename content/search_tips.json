@@ -1,0 +1,18 @@
+{
+    "no_results": [
+        "Try searching for single words instead of phrases",
+        "Use different keywords or synonyms",
+        "Try broader terms (e.g., 'server' instead of 'express server')",
+        "Use FTS5 syntax: \"exact phrase\" or word1 OR word2"
+    ],
+    "with_results": [
+        "Results are weighted by: title (highest), keywords, description, content (lowest)",
+        "Use get_recipe to see full details including code snippets"
+    ],
+    "fts5_syntax": [
+        "\"exact phrase\" - Search for exact phrase",
+        "word1 AND word2 - Both words must be present",
+        "word1 OR word2 - Either word can be present",
+        "word1 NOT word2 - First word present, second word absent"
+    ]
+}
