@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -7,6 +8,8 @@ import {
 import sqlite3 from "sqlite3";
 import path from "path";
 import { fileURLToPath } from "url";
+import fs from "fs";
+import { execSync } from "child_process";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -307,21 +310,56 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 const result = {
                     server: "Recipes MCP Server",
                     version: "1.0.0",
-                    description: "Create and manage a recipe database for coding knowledge and tribal wisdom",
-                    tools: [
-                        "about - Server information",
-                        "list_recipes - List all recipes",
-                        "get_recipe - Get full recipe details",
-                        "search_recipes - Search recipes and keywords",
-                        "search_snippets - Search code snippets",
-                        "get_snippet - Get snippet by ID",
-                        "get_recipe_snippets - Get all snippets for a recipe",
-                        "get_recipe_snippet - Get specific snippet by recipe ID and ref",
-                        "create_recipe - Create a new recipe",
-                        "create_recipe_howto - Get recipe creation guide",
-                        "delete_recipe - Delete a recipe",
-                        "update_recipe - Add addendum to recipe",
-                        "recipe_add_snippet - Add snippet to recipe"
+                    description: "Create and manage a recipe database for coding knowledge and tribal wisdom. Store code recipes with searchable snippets, keywords, and addendums.",
+                    workflow: {
+                        getting_started: [
+                            "1. Use 'create_recipe_howto' to understand recipe structure",
+                            "2. Use 'create_recipe' to add your first recipe with code snippets",
+                            "3. Use 'list_recipes' or 'search_recipes' to find recipes",
+                            "4. Use 'get_recipe' to view full recipe details",
+                            "5. Use 'get_recipe_snippet' to retrieve specific code snippets"
+                        ],
+                        searching: [
+                            "Use 'search_recipes' to find recipes by title, keywords, or content",
+                            "Use 'search_snippets' to find specific code across all recipes",
+                            "Search supports FTS5 syntax: use quotes for exact phrases, AND/OR for boolean logic"
+                        ],
+                        managing: [
+                            "Use 'update_recipe' to add addendums when recipes evolve",
+                            "Use 'recipe_add_snippet' to add new code snippets to existing recipes",
+                            "Use 'delete_recipe' to remove recipes (cascades to all related data)"
+                        ]
+                    },
+                    tools: {
+                        discovery: [
+                            "about - This information",
+                            "list_recipes - List all recipes (id, title, description)",
+                            "search_recipes - Search recipes by keyword/content",
+                            "search_snippets - Search code snippets across all recipes"
+                        ],
+                        retrieval: [
+                            "get_recipe - Get full recipe with keywords, snippets, addendums",
+                            "get_snippet - Get a snippet by its ID",
+                            "get_recipe_snippets - Get all snippets for a specific recipe",
+                            "get_recipe_snippet - Get specific snippet by recipe_id and ref (e.g., recipe_id:1, ref:'setup')"
+                        ],
+                        creation: [
+                            "create_recipe_howto - Get detailed guide on creating recipes",
+                            "create_recipe - Create new recipe with title, description, keywords, and snippets",
+                            "recipe_add_snippet - Add a code snippet to existing recipe"
+                        ],
+                        modification: [
+                            "update_recipe - Add an addendum to an existing recipe",
+                            "delete_recipe - Delete a recipe and all related data"
+                        ]
+                    },
+                    usage_tips: [
+                        "All tools return JSON responses",
+                        "Responses include 'next_actions' to guide your workflow",
+                        "Snippet refs should be short and memorable (e.g., 'setup', 'main', 'helper')",
+                        "Code snippets should be plain code without markdown formatting (no ``` fences)",
+                        "Keywords are comma-separated and stored individually for better searching",
+                        "Use FTS5 search syntax for advanced queries: \"exact phrase\" AND keyword OR another"
                     ]
                 };
                 return {
@@ -339,9 +377,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 const result = {
                     recipes: recipes,
                     count: recipes.length,
+                    usage: "To get full details of a recipe, use the 'get_recipe' tool with the recipe id from this list",
+                    example_call: recipes.length > 0 ? {
+                        tool: "get_recipe",
+                        arguments: { id: recipes[0].id }
+                    } : null,
                     next_actions: [
-                        "Use get_recipe with a recipe id to see full details",
-                        "Use search_recipes to find specific recipes"
+                        recipes.length > 0 ? `Call get_recipe with id ${recipes[0].id} to see the first recipe's details` : "Call create_recipe to add your first recipe",
+                        "Call search_recipes with a query string to find specific recipes"
                     ]
                 };
                 return {
@@ -375,14 +418,39 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     recipe: recipe,
                     keywords: keywords.map(k => k.keyword),
                     snippets: snippets.map(s => ({
-                        ...s,
-                        call: `get_recipe_snippet(recipe_id: ${args.id}, ref: "${s.ref}")`
+                        id: s.id,
+                        ref: s.ref,
+                        language: s.language,
+                        description: s.description,
+                        snippet_preview: s.snippet.substring(0, 100) + (s.snippet.length > 100 ? '...' : ''),
+                        to_get_full_snippet: {
+                            tool: "get_recipe_snippet",
+                            arguments: { recipe_id: args.id, ref: s.ref }
+                        }
                     })),
                     addendums: addendums,
-                    next_actions: [
-                        snippets.length > 0 ? `Use get_recipe_snippet with recipe_id: ${args.id} and ref to get specific snippets` : "Use recipe_add_snippet to add code snippets",
-                        "Use update_recipe to add an addendum",
-                        "Use search_snippets to find related code"
+                    usage: {
+                        accessing_snippets: `This recipe has ${snippets.length} snippet(s). Use 'get_recipe_snippet' tool with recipe_id and the snippet's ref to get the full code.`,
+                        adding_snippets: "Use 'recipe_add_snippet' tool to add more code snippets to this recipe",
+                        adding_notes: "Use 'update_recipe' tool to add an addendum with updates or additional notes"
+                    },
+                    next_actions: snippets.length > 0 ? [
+                        {
+                            action: "Get first snippet",
+                            tool: "get_recipe_snippet",
+                            arguments: { recipe_id: args.id, ref: snippets[0].ref }
+                        },
+                        {
+                            action: "Add another snippet",
+                            tool: "recipe_add_snippet",
+                            arguments: { recipe_id: args.id, ref: "<unique_ref>", snippet: "<code>", language: "<language>", description: "<description>" }
+                        }
+                    ] : [
+                        {
+                            action: "Add first snippet",
+                            tool: "recipe_add_snippet",
+                            arguments: { recipe_id: args.id, ref: "<unique_ref>", snippet: "<code>", language: "<language>", description: "<description>" }
+                        }
                     ]
                 };
                 return {
@@ -423,7 +491,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     )
                     GROUP BY r.id
                     ORDER BY relevance DESC, r.created_at DESC
-                `, [`%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`, query, query]);
+    `, [` % ${query}% `, ` % ${query}% `, ` % ${query}% `, ` % ${query}% `, query, query]);
 
                 const result = {
                     results: searchResults.map(r => ({
@@ -431,14 +499,45 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                         title: r.title,
                         description: r.description,
                         keywords: r.keywords ? r.keywords.split(',') : [],
-                        call: `get_recipe(id: ${r.id})`
+                        to_view_full_recipe: {
+                            tool: "get_recipe",
+                            arguments: { id: r.id }
+                        }
                     })),
                     count: searchResults.length,
                     query: query,
-                    suggestion: searchResults.length === 0 ? "Try searching for single words or use different keywords" : null,
-                    next_actions: [
-                        "Use get_recipe with a recipe id to see full details",
-                        "Try different search terms if results are not relevant"
+                    search_tips: searchResults.length === 0 ? [
+                        "Try searching for single words instead of phrases",
+                        "Use different keywords or synonyms",
+                        "Try broader terms (e.g., 'server' instead of 'express server')",
+                        "Use FTS5 syntax: \"exact phrase\" or word1 OR word2"
+                    ] : [
+                        "Results are weighted by: title (highest), keywords, description, content (lowest)",
+                        "Use get_recipe to see full details including code snippets"
+                    ],
+                    fts5_syntax_examples: [
+                        "\"exact phrase\" - Search for exact phrase",
+                        "word1 AND word2 - Both words must be present",
+                        "word1 OR word2 - Either word can be present",
+                        "word1 NOT word2 - First word present, second word absent"
+                    ],
+                    next_actions: searchResults.length > 0 ? [
+                        {
+                            action: "View first result",
+                            tool: "get_recipe",
+                            arguments: { id: searchResults[0].id }
+                        }
+                    ] : [
+                        {
+                            action: "Try different search",
+                            tool: "search_recipes",
+                            arguments: { query: "<different_keywords>" }
+                        },
+                        {
+                            action: "List all recipes",
+                            tool: "list_recipes",
+                            arguments: {}
+                        }
                     ]
                 };
                 return {
@@ -492,21 +591,48 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
                 const result = {
                     results: searchResults.map(s => ({
-                        id: s.id,
+                        snippet_id: s.id,
                         recipe_id: s.recipe_id,
                         ref: s.ref,
                         snippet: s.snippet,
                         language: s.language,
                         description: s.description,
-                        recipe_title: s.recipe_title,
-                        recipe_keywords: s.recipe_keywords ? s.recipe_keywords.split(',') : [],
-                        call: `get_recipe_snippet(recipe_id: ${s.recipe_id}, ref: "${s.ref}")`
+                        recipe_context: {
+                            title: s.recipe_title,
+                            keywords: s.recipe_keywords ? s.recipe_keywords.split(',') : []
+                        },
+                        to_get_snippet: {
+                            tool: "get_recipe_snippet",
+                            arguments: { recipe_id: s.recipe_id, ref: s.ref }
+                        },
+                        to_get_recipe: {
+                            tool: "get_recipe",
+                            arguments: { id: s.recipe_id }
+                        }
                     })),
                     count: searchResults.length,
                     query: query,
-                    next_actions: [
-                        "Use get_recipe_snippet to get the full snippet context",
-                        "Use get_recipe to see the full recipe containing the snippet"
+                    search_info: {
+                        weighting: "Results weighted by: snippet description (highest), snippet code, recipe title, recipe keywords, recipe description (lowest)",
+                        tip: searchResults.length === 0 ? "Try single keywords or use FTS5 syntax for advanced search" : "Each result includes the code snippet and context about its parent recipe"
+                    },
+                    fts5_syntax_examples: [
+                        "\"exact phrase\" - Search for exact phrase",
+                        "word1 AND word2 - Both words must be present",
+                        "word1 OR word2 - Either word can be present"
+                    ],
+                    next_actions: searchResults.length > 0 ? [
+                        {
+                            action: "View full recipe context",
+                            tool: "get_recipe",
+                            arguments: { id: searchResults[0].recipe_id }
+                        }
+                    ] : [
+                        {
+                            action: "Try different search",
+                            tool: "search_snippets",
+                            arguments: { query: "<different_keywords>" }
+                        }
                     ]
                 };
                 return {
@@ -525,7 +651,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     FROM recipe_snippets rs
                     JOIN recipes r ON rs.recipe_id = r.id
                     WHERE rs.id = ?
-                `, [args.id]);
+    `, [args.id]);
                 if (!snippet) {
                     return {
                         content: [
@@ -561,7 +687,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     FROM recipe_snippets rs
                     JOIN recipes r ON rs.recipe_id = r.id
                     WHERE rs.recipe_id = ?
-                    ORDER BY rs.created_at
+    ORDER BY rs.created_at
                 `, [args.recipe_id]);
 
                 const result = {
@@ -592,7 +718,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     FROM recipe_snippets rs
                     JOIN recipes r ON rs.recipe_id = r.id
                     WHERE rs.recipe_id = ? AND rs.ref = ?
-                `, [args.recipe_id, args.ref]);
+    `, [args.recipe_id, args.ref]);
                 if (!snippet) {
                     return {
                         content: [
@@ -605,11 +731,38 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 }
 
                 const result = {
-                    snippet: snippet,
-                    call: `snippet:${args.recipe_id}:${args.ref}`,
+                    snippet: {
+                        id: snippet.id,
+                        recipe_id: snippet.recipe_id,
+                        ref: snippet.ref,
+                        code: snippet.snippet,
+                        language: snippet.language,
+                        description: snippet.description,
+                        created_at: snippet.created_at
+                    },
+                    recipe_context: {
+                        title: snippet.recipe_title
+                    },
+                    usage: {
+                        reference_format: `snippet:${args.recipe_id}:${args.ref} `,
+                        description: "Use this reference format to link to this specific snippet in documentation or other recipes"
+                    },
                     next_actions: [
-                        `Use get_recipe with id: ${args.recipe_id} to see the full recipe`,
-                        `Use get_recipe_snippets with recipe_id: ${args.recipe_id} to see all snippets for this recipe`
+                        {
+                            action: "View full recipe",
+                            tool: "get_recipe",
+                            arguments: { id: args.recipe_id }
+                        },
+                        {
+                            action: "View all snippets for this recipe",
+                            tool: "get_recipe_snippets",
+                            arguments: { recipe_id: args.recipe_id }
+                        },
+                        {
+                            action: "Search for similar code",
+                            tool: "search_snippets",
+                            arguments: { query: snippet.language || "<keyword>" }
+                        }
                     ]
                 };
                 return {
@@ -673,11 +826,27 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                                         success: true,
                                         recipe_id: recipeId,
                                         title: args.title,
-                                        call: `get_recipe(id: ${recipeId})`,
+                                        summary: {
+                                            keywords_added: args.keywords ? args.keywords.split(',').map(k => k.trim()).filter(k => k).length : 0,
+                                            snippets_added: args.snippets ? args.snippets.length : 0
+                                        },
+                                        usage: "Recipe created successfully. You can now view it, add more snippets, or add addendums as it evolves.",
                                         next_actions: [
-                                            `Use get_recipe with id: ${recipeId} to see the full recipe`,
-                                            "Use recipe_add_snippet to add more snippets",
-                                            "Use update_recipe to add addendums"
+                                            {
+                                                action: "View the newly created recipe",
+                                                tool: "get_recipe",
+                                                arguments: { id: recipeId }
+                                            },
+                                            {
+                                                action: "Add another snippet",
+                                                tool: "recipe_add_snippet",
+                                                arguments: { recipe_id: recipeId, ref: "<unique_ref>", snippet: "<code>", language: "<language>", description: "<description>" }
+                                            },
+                                            {
+                                                action: "Add an addendum",
+                                                tool: "update_recipe",
+                                                arguments: { recipe_id: recipeId, content: "<addendum_text>" }
+                                            }
                                         ]
                                     };
                                     resolve({
@@ -731,7 +900,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                             },
                             {
                                 ref: "server",
-                                snippet: "const PORT = process.env.PORT || 3000;\napp.listen(PORT, () => {\n  console.log(`Server running on port ${PORT}`);\n});",
+                                snippet: "const PORT = process.env.PORT || 3000;\napp.listen(PORT, () => {\n  console.log(`Server running on port ${ PORT } `);\n});",
                                 language: "javascript",
                                 description: "Start the server"
                             }
@@ -876,12 +1045,28 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     recipe_id: args.recipe_id,
                     recipe_title: recipe.title,
                     snippet_id: result.lastID,
-                    ref: args.ref,
-                    call: `get_recipe_snippet(recipe_id: ${args.recipe_id}, ref: "${args.ref}")`,
+                    snippet_ref: args.ref,
+                    snippet_language: args.language || "not specified",
+                    usage: {
+                        reference: `snippet:${args.recipe_id}:${args.ref}`,
+                        description: "Use this reference format to link to this snippet from other recipes or documentation"
+                    },
                     next_actions: [
-                        `Use get_recipe with id: ${args.recipe_id} to see all snippets`,
-                        `Use get_recipe_snippet with recipe_id: ${args.recipe_id} and ref: "${args.ref}" to view this snippet`,
-                        "Add more snippets to build up the recipe"
+                        {
+                            action: "View the snippet you just added",
+                            tool: "get_recipe_snippet",
+                            arguments: { recipe_id: args.recipe_id, ref: args.ref }
+                        },
+                        {
+                            action: "View full recipe with all snippets",
+                            tool: "get_recipe",
+                            arguments: { id: args.recipe_id }
+                        },
+                        {
+                            action: "Add another snippet",
+                            tool: "recipe_add_snippet",
+                            arguments: { recipe_id: args.recipe_id, ref: "<different_unique_ref>", snippet: "<code>", language: "<language>", description: "<description>" }
+                        }
                     ]
                 };
                 return {
@@ -912,6 +1097,19 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
 // Start the server
 async function main() {
+    // Check if database exists, initialize if not
+    if (!fs.existsSync(dbPath)) {
+        console.error("Database not found, initializing...");
+        try {
+            const seedPath = path.join(__dirname, "seed.cjs");
+            execSync(`node "${seedPath}"`, { stdio: 'inherit' });
+            console.error("Database initialized successfully.");
+        } catch (error) {
+            console.error("Failed to initialize database:", error);
+            process.exit(1);
+        }
+    }
+
     const transport = new StdioServerTransport();
     await server.connect(transport);
     console.error("Recipes MCP Server running on stdio");

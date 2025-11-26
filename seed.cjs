@@ -169,8 +169,9 @@ const db = new sqlite3.Database(dbPath, (err) => {
 
 // Create tables
 db.serialize(() => {
-    tables.forEach(table => {
-        if (shouldDrop) {
+    // Handle drops if --drop flag is set
+    if (shouldDrop) {
+        tables.forEach(table => {
             // Drop FTS triggers first
             if (table.ftsTriggers) {
                 table.ftsTriggers.forEach((_, index) => {
@@ -189,59 +190,54 @@ db.serialize(() => {
                     console.log(`${displayName} table dropped.`);
                 }
             });
-        }
+        });
+    }
 
-        // Check if table exists
-        db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name='${table.name}'`, (err, row) => {
-            const exists = !!row;
+    // Create all main tables first
+    tables.forEach(table => {
+        db.run(table.schema, (err) => {
+            if (err) {
+                console.error(`Error creating ${table.name} table:`, err.message);
+            } else {
+                const displayName = table.name.charAt(0).toUpperCase() + table.name.slice(1).replace(/_/g, '_');
+                console.log(`${displayName} table created successfully.`);
+            }
+        });
+    });
 
-            // Create main table
-            db.run(table.schema, (err) => {
+    // Create all FTS tables
+    tables.forEach(table => {
+        if (table.ftsSchema) {
+            db.run(table.ftsSchema, (err) => {
                 if (err) {
-                    console.error(`Error creating ${table.name} table:`, err.message);
+                    console.error(`Error creating ${table.name}_fts table:`, err.message);
                 } else {
                     const displayName = table.name.charAt(0).toUpperCase() + table.name.slice(1).replace(/_/g, '_');
-                    console.log(exists ? `${displayName} table already exists.` : `${displayName} table created successfully.`);
+                    console.log(`${displayName} FTS table created successfully.`);
                 }
             });
-        });
+        }
+    });
 
-        // Create FTS table
-        if (table.ftsSchema) {
-            db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name='${table.name}_fts'`, (err, row) => {
-                const ftsExists = !!row;
-
-                db.run(table.ftsSchema, (err) => {
+    // Create all triggers last
+    tables.forEach(table => {
+        if (table.ftsTriggers) {
+            table.ftsTriggers.forEach((trigger) => {
+                db.run(trigger, (err) => {
                     if (err) {
-                        console.error(`Error creating ${table.name}_fts table:`, err.message);
-                    } else {
-                        const displayName = table.name.charAt(0).toUpperCase() + table.name.slice(1).replace(/_/g, '_');
-                        console.log(ftsExists ? `${displayName} FTS table already exists.` : `${displayName} FTS table created successfully.`);
+                        console.error(`Error creating trigger for ${table.name}:`, err.message);
                     }
                 });
             });
-
-            // Create FTS triggers
-            if (table.ftsTriggers) {
-                table.ftsTriggers.forEach((trigger) => {
-                    db.run(trigger, (err) => {
-                        if (err) {
-                            console.error(`Error creating trigger for ${table.name}:`, err.message);
-                        }
-                    });
-                });
-            }
         }
     });
 
     // Close the database connection after all operations complete
-    db.run('SELECT 1', (err) => {
-        db.close((err) => {
-            if (err) {
-                console.error('Error closing database:', err.message);
-            } else {
-                console.log('Database connection closed.');
-            }
-        });
+    db.close((err) => {
+        if (err) {
+            console.error('Error closing database:', err.message);
+        } else {
+            console.log('Database connection closed.');
+        }
     });
 });
